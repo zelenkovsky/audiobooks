@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audio Collection Index</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; color: #1a1a2e; }
+  .header { position: sticky; top: 0; z-index: 10; background: #fff; border-bottom: 1px solid #dee2e6; padding: 16px 24px; }
+  .header h1 { font-size: 18px; font-weight: 600; margin-bottom: 12px; }
+  .search-box { width: 100%; max-width: 600px; padding: 10px 14px; font-size: 15px; border: 1px solid #ced4da; border-radius: 6px; outline: none; }
+  .search-box:focus { border-color: #80bdff; box-shadow: 0 0 0 3px rgba(0,123,255,.15); }
+  .counter { margin-top: 8px; font-size: 13px; color: #6c757d; }
+  .list { padding: 0 24px 24px; }
+  .entry { padding: 10px 14px; border-bottom: 1px solid #eee; cursor: default; }
+  .entry:hover { background: #e9ecef; }
+  .entry-title { font-size: 15px; }
+  .entry-author { font-size: 13px; color: #0d6efd; margin-top: 2px; }
+  .entry-meta { font-size: 12px; color: #6c757d; margin-top: 4px; font-family: monospace; }
+  .no-results { text-align: center; padding: 48px; color: #6c757d; font-size: 15px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Audio Collection</h1>
+  <input class="search-box" id="search" type="text" placeholder="Search by title, author, or path..." autocomplete="off">
+  <div class="counter" id="counter"></div>
+</div>
+<div class="list" id="list"></div>
+
+<script>
+const listEl = document.getElementById('list');
+const searchEl = document.getElementById('search');
+const counterEl = document.getElementById('counter');
+
+let allBooks = [];
+
+function render(books) {
+  if (books.length === 0) {
+    listEl.innerHTML = '<div class="no-results">No results found</div>';
+    counterEl.textContent = '0 / ' + allBooks.length;
+    return;
+  }
+  counterEl.textContent = books.length + ' / ' + allBooks.length;
+  listEl.innerHTML = books.map(function(b) {
+    let authorHtml = b.author ? '<div class="entry-author">' + esc(b.author) + '</div>' : '';
+    let metaText = b.files + ' ' + b.format;
+    return '<div class="entry">'
+      + '<div class="entry-title">' + esc(b.title) + '</div>'
+      + authorHtml
+      + '<div class="entry-meta">' + esc(metaText) + '  |  ' + esc(b.path) + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function esc(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function filter(query) {
+  if (!query) return allBooks;
+  var q = query.toLowerCase();
+  return allBooks.filter(function(b) {
+    return b.title.toLowerCase().indexOf(q) !== -1
+      || b.author.toLowerCase().indexOf(q) !== -1
+      || b.path.toLowerCase().indexOf(q) !== -1;
+  });
+}
+
+searchEl.addEventListener('input', function() {
+  render(filter(searchEl.value));
+});
+
+fetch('books.json')
+  .then(function(r) { return r.json(); })
+  .then(function(books) {
+    allBooks = books;
+    render(allBooks);
+    searchEl.focus();
+  });
+</script>
+</body>
+</html>
